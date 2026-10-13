@@ -15,7 +15,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/lucide@0.400.0/dist/umd/lucide.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
 
 <style>
@@ -52,32 +51,51 @@
 
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, Component } = React;
+/* ============ INLINE SVG ICONS ============ */
+const ICON_PATHS = {
+  Send: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z",
+  Terminal: "M4 17l6-6-6-6M12 19h8",
+  History: "M12 8v4l3 3M3.05 11a9 9 0 1 1 .5 4M3 4v5h5",
+  CheckCircle: "M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3",
+  User: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  Settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  Database: "M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3zM3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3",
+  Activity: "M22 12h-4l-3 9L9 3l-3 9H2",
+  Lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
+  ArrowLeft: "M19 12H5M12 19l-7-7 7-7",
+  Eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  EyeOff: "M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22",
+  Shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  Menu: "M3 12h18M3 6h18M3 18h18",
+  Plus: "M12 5v14M5 12h14",
+  MessageSquare: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  Trash2: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6",
+  Edit2: "M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z",
+  Wifi: "M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
+  WifiOff: "M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
+  CloudOff: "M22.61 16.95A5 5 0 0 0 18 10h-1.26a8 8 0 0 0-7.05-6M5 5a8 8 0 0 0 4 15h9a5 5 0 0 0 1.7-.3M1 1l22 22",
+  HardDrive: "M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11zM6 16h.01M10 16h.01",
+  BrainCircuit: "M12 5a3 3 0 1 0-3 3v4a3 3 0 0 0 6 0V8a3 3 0 1 0-3-3zM9 12H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h5M15 12h5a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-5M12 12v3",
+  X: "M18 6 6 18M6 6l12 12",
+  ChevronRight: "M9 18l6-6-6-6",
+  LogOut: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+  Save: "M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8",
+  Server: "M2 2h20v8H2zM2 14h20v8H2zM6 6h.01M6 18h.01",
+  Zap: "M13 2 3 14h9l-1 8 10-12h-9l1-8z",
+  Globe: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+};
 
-/* ============ LUCIDE ICON WRAPPER ============ */
 function Icon({ name, size = 16, className = "", strokeWidth = 2 }) {
-  const lib = window.lucide || {};
-  const node = lib[name];
-  if (!node || !Array.isArray(node)) {
-    return React.createElement('svg', {
-      width: size, height: size, viewBox: '0 0 24 24',
-      fill: 'none', stroke: 'currentColor', strokeWidth,
-      strokeLinecap: 'round', strokeLinejoin: 'round', className
-    });
-  }
-  const children = node.map((child, i) => {
-    if (!Array.isArray(child)) return null;
-    const [tag, attrs] = child;
-    return React.createElement(tag, { key: i, ...(attrs || {}) });
-  });
+  const d = ICON_PATHS[name];
   return React.createElement('svg', {
     xmlns: 'http://www.w3.org/2000/svg',
     width: size, height: size, viewBox: '0 0 24 24',
-    fill: 'none', stroke: 'currentColor', strokeWidth,
-    strokeLinecap: 'round', strokeLinejoin: 'round', className
-  }, children);
+    fill: 'none', stroke: 'currentColor',
+    strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round',
+    className
+  }, d ? React.createElement('path', { d }) : null);
 }
 
-// Aliases so the rest of the code works unchanged
 const Send = (p) => <Icon name="Send" {...p} />;
 const Terminal = (p) => <Icon name="Terminal" {...p} />;
 const History = (p) => <Icon name="History" {...p} />;
@@ -109,6 +127,7 @@ const Save = (p) => <Icon name="Save" {...p} />;
 const Server = (p) => <Icon name="Server" {...p} />;
 const Zap = (p) => <Icon name="Zap" {...p} />;
 const Globe = (p) => <Icon name="Globe" {...p} />;
+
 
 /* ============ ENV ============ */
 const getEnvVar = (key) => {
