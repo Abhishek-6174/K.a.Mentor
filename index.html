@@ -2,63 +2,62 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#050505" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="K.A Mentor" />
 <title>K.A Mentor</title>
-<link rel="manifest" href="./manifest.json" />
-<link rel="icon" type="image/svg+xml" href="./icon.svg" />
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
 
 <style>
   * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-  html, body { height: 100%; overscroll-behavior: none; background: #050505; margin: 0; }
+  html, body { height: 100%; margin: 0; background: #050505; color: #fff; overscroll-behavior: none; }
   #root { height: 100%; }
-  .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-  #boot-error { display: none; color: #ef4444; padding: 20px; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+  #boot-error { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    background: #7f1d1d; color: #fecaca; padding: 12px; font: 11px/1.4 monospace; white-space: pre-wrap; max-height: 40vh; overflow: auto; }
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 </style>
 </head>
 <body>
 <div id="root"></div>
-<div id="boot-error"></div>
+<pre id="boot-error"></pre>
 
 <script>
-  window.addEventListener('error', (e) => {
-    const box = document.getElementById('boot-error');
-    if (box) {
-      box.style.display = 'block';
-      box.textContent += '\n[ERROR] ' + e.message + '\n' + (e.filename || '') + ':' + (e.lineno || '');
-    }
+  window.addEventListener('error', function(e) {
+    var b = document.getElementById('boot-error');
+    b.style.display = 'block';
+    b.textContent += '[ERROR] ' + e.message + '\n  at ' + (e.filename || '?') + ':' + (e.lineno || '?') + '\n';
   });
-  window.addEventListener('unhandledrejection', (e) => {
-    const box = document.getElementById('boot-error');
-    if (box) {
-      box.style.display = 'block';
-      box.textContent += '\n[PROMISE] ' + (e.reason?.message || e.reason);
-    }
+  window.addEventListener('unhandledrejection', function(e) {
+    var b = document.getElementById('boot-error');
+    b.style.display = 'block';
+    b.textContent += '[PROMISE] ' + ((e.reason && e.reason.message) || e.reason) + '\n';
   });
+  // Kill any stale service workers from previous versions
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(rs) {
+      rs.forEach(function(r) { r.unregister(); });
+    });
+  }
 </script>
 
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, Component } = React;
-/* ============ INLINE SVG ICONS ============ */
+
+/* ==================== INLINE SVG ICONS ==================== */
 const ICON_PATHS = {
   Send: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z",
   Terminal: "M4 17l6-6-6-6M12 19h8",
   History: "M12 8v4l3 3M3.05 11a9 9 0 1 1 .5 4M3 4v5h5",
   CheckCircle: "M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3",
   User: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
-  Settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  Settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
   Database: "M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3zM3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3",
   Activity: "M22 12h-4l-3 9L9 3l-3 9H2",
   Lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
@@ -82,18 +81,19 @@ const ICON_PATHS = {
   Save: "M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8",
   Server: "M2 2h20v8H2zM2 14h20v8H2zM6 6h.01M6 18h.01",
   Zap: "M13 2 3 14h9l-1 8 10-12h-9l1-8z",
-  Globe: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+  Globe: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
+  Play: "M5 3l14 9-14 9V3z"
 };
 
 function Icon({ name, size = 16, className = "", strokeWidth = 2 }) {
   const d = ICON_PATHS[name];
-  return React.createElement('svg', {
-    xmlns: 'http://www.w3.org/2000/svg',
-    width: size, height: size, viewBox: '0 0 24 24',
-    fill: 'none', stroke: 'currentColor',
-    strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round',
-    className
-  }, d ? React.createElement('path', { d }) : null);
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth={strokeWidth}
+      strokeLinecap="round" strokeLinejoin="round" className={className}>
+      {d ? <path d={d} /> : null}
+    </svg>
+  );
 }
 
 const Send = (p) => <Icon name="Send" {...p} />;
@@ -128,15 +128,13 @@ const Server = (p) => <Icon name="Server" {...p} />;
 const Zap = (p) => <Icon name="Zap" {...p} />;
 const Globe = (p) => <Icon name="Globe" {...p} />;
 
-
-/* ============ ENV ============ */
+/* ==================== ENV ==================== */
 const getEnvVar = (key) => {
   try { const v = localStorage.getItem(key); if (v) return v; } catch(e) {}
   return '';
 };
-const isFirebaseConfigured = false;
 
-/* ============ INDEXED DB ============ */
+/* ==================== INDEXED DB ==================== */
 const initLocalDB = () => new Promise((resolve, reject) => {
   const request = indexedDB.open('KAMentorLocalBrain', 3);
   request.onupgradeneeded = (e) => {
@@ -148,48 +146,58 @@ const initLocalDB = () => new Promise((resolve, reject) => {
   request.onsuccess = () => resolve(request.result);
   request.onerror = () => reject(request.error);
 });
+
 const saveSetting = async (key, value) => {
-  try { const d = await initLocalDB(); d.transaction(['settings'], 'readwrite').objectStore('settings').put({ key, value }); } catch(e){}
+  try { const d = await initLocalDB(); d.transaction(['settings'], 'readwrite').objectStore('settings').put({ key, value }); } catch(e) { console.error(e); }
 };
+
 const getSetting = async (key) => {
   try {
     const d = await initLocalDB();
-    return new Promise((res) => {
-      const r = d.transaction(['settings'],'readonly').objectStore('settings').get(key);
-      r.onsuccess = () => res(r.result?.value || "");
+    return new Promise((resolve) => {
+      const r = d.transaction(['settings'], 'readonly').objectStore('settings').get(key);
+      r.onsuccess = () => resolve(r.result?.value || "");
+      r.onerror = () => resolve("");
     });
   } catch(e) { return ""; }
 };
+
 const saveLocalMemory = async (text) => {
-  try { const d = await initLocalDB(); d.transaction(['memories'],'readwrite').objectStore('memories').put({ id: Date.now().toString(), text, timestamp: Date.now() }); } catch(e){}
+  try { const d = await initLocalDB(); d.transaction(['memories'], 'readwrite').objectStore('memories').put({ id: Date.now().toString(), text, timestamp: Date.now() }); } catch(e) {}
 };
+
 const getLocalMemories = async () => {
   try {
     const d = await initLocalDB();
-    return new Promise((res) => {
-      const r = d.transaction(['memories'],'readonly').objectStore('memories').getAll();
-      r.onsuccess = () => res(r.result || []);
+    return new Promise((resolve) => {
+      const r = d.transaction(['memories'], 'readonly').objectStore('memories').getAll();
+      r.onsuccess = () => resolve(r.result || []);
+      r.onerror = () => resolve([]);
     });
   } catch(e) { return []; }
 };
+
 const saveChatSession = async (s) => {
-  try { const d = await initLocalDB(); d.transaction(['chatSessions'],'readwrite').objectStore('chatSessions').put(s); } catch(e){}
+  try { const d = await initLocalDB(); d.transaction(['chatSessions'], 'readwrite').objectStore('chatSessions').put(s); } catch(e) {}
 };
+
 const getChatSessions = async () => {
   try {
     const d = await initLocalDB();
-    return new Promise((res) => {
-      const r = d.transaction(['chatSessions'],'readonly').objectStore('chatSessions').getAll();
-      r.onsuccess = () => res(r.result?.sort((a,b)=>b.updatedAt-a.updatedAt) || []);
+    return new Promise((resolve) => {
+      const r = d.transaction(['chatSessions'], 'readonly').objectStore('chatSessions').getAll();
+      r.onsuccess = () => resolve((r.result || []).sort((a,b) => b.updatedAt - a.updatedAt));
+      r.onerror = () => resolve([]);
     });
   } catch(e) { return []; }
 };
+
 const deleteChatSession = async (id) => {
-  try { const d = await initLocalDB(); d.transaction(['chatSessions'],'readwrite').objectStore('chatSessions').delete(id); } catch(e){}
+  try { const d = await initLocalDB(); d.transaction(['chatSessions'], 'readwrite').objectStore('chatSessions').delete(id); } catch(e) {}
 };
 
-/* ============ ROUTER ============ */
-const AI_PROVIDERS = { GEMINI:'gemini', GROQ:'groq', OPENROUTER:'openrouter', CLOUDFLARE:'cloudflare' };
+/* ==================== ROUTER ==================== */
+const AI_PROVIDERS = { GEMINI: 'gemini', GROQ: 'groq', OPENROUTER: 'openrouter', CLOUDFLARE: 'cloudflare' };
 
 const ROUTER_CONFIG = {
   mentor: {
@@ -208,7 +216,7 @@ const ROUTER_CONFIG = {
       [AI_PROVIDERS.GROQ]: 'llama3-70b-8192',
       [AI_PROVIDERS.OPENROUTER]: 'anthropic/claude-3.5-haiku'
     },
-    systemPrompt: "You are K.A Dev Agent, an elite senior software engineer and architect."
+    systemPrompt: "You are K.A Dev Agent, an elite senior software engineer and architect. Analyze architecture, maintain modularity."
   }
 };
 
@@ -218,7 +226,8 @@ const fetchWithTimeout = async (resource, options = {}) => {
   const id = setTimeout(() => controller.abort(), timeout);
   try {
     const response = await fetch(resource, { ...options, signal: controller.signal });
-    clearTimeout(id); return response;
+    clearTimeout(id);
+    return response;
   } catch (error) {
     clearTimeout(id);
     if (error.name === 'AbortError') throw new Error('REQUEST_TIMEOUT');
@@ -228,18 +237,19 @@ const fetchWithTimeout = async (resource, options = {}) => {
 
 const adapters = {
   [AI_PROVIDERS.GEMINI]: async (messages, systemPrompt, model) => {
-    const formattedMessages = messages.map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text }]
+    const formattedMessages = messages.map(m => ({
+      role: m.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: m.text }]
     }));
     const apiKey = getEnvVar('VITE_GEMINI_API_KEY');
     if (!apiKey) throw new Error("API_KEY_MISSING");
-    const response = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
+    const r = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ system_instruction: { parts: [{ text: systemPrompt }] }, contents: formattedMessages })
     });
-    if (!response.ok) throw new Error(response.status === 429 ? "RATE_LIMIT" : "NETWORK_FAILURE");
-    const data = await response.json();
+    if (!r.ok) throw new Error(r.status === 429 ? "RATE_LIMIT" : "NETWORK_FAILURE");
+    const data = await r.json();
     return data.candidates[0].content.parts[0].text;
   },
   [AI_PROVIDERS.GROQ]: async (messages, systemPrompt, model) => {
@@ -247,14 +257,15 @@ const adapters = {
     if (!apiKey) throw new Error("API_KEY_MISSING");
     const formattedMessages = [
       { role: "system", content: systemPrompt },
-      ...messages.map(msg => ({ role: msg.sender === 'user' ? 'user' : 'assistant', content: msg.text }))
+      ...messages.map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }))
     ];
-    const response = await fetchWithTimeout(`https://api.groq.com/openai/v1/chat/completions`, {
-      method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+    const r = await fetchWithTimeout(`https://api.groq.com/openai/v1/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
       body: JSON.stringify({ model, messages: formattedMessages })
     });
-    if (!response.ok) throw new Error(response.status === 429 ? "RATE_LIMIT" : "NETWORK_FAILURE");
-    const data = await response.json();
+    if (!r.ok) throw new Error(r.status === 429 ? "RATE_LIMIT" : "NETWORK_FAILURE");
+    const data = await r.json();
     return data.choices[0].message.content;
   },
   [AI_PROVIDERS.OPENROUTER]: async (messages, systemPrompt, model) => {
@@ -262,15 +273,15 @@ const adapters = {
     if (!apiKey) throw new Error("API_KEY_MISSING");
     const formattedMessages = [
       { role: "system", content: systemPrompt },
-      ...messages.map(msg => ({ role: msg.sender === 'user' ? 'user' : 'assistant', content: msg.text }))
+      ...messages.map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }))
     ];
-    const response = await fetchWithTimeout(`https://openrouter.ai/api/v1/chat/completions`, {
+    const r = await fetchWithTimeout(`https://openrouter.ai/api/v1/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}`, "X-Title": "K.A Mentor" },
       body: JSON.stringify({ model, messages: formattedMessages })
     });
-    if (!response.ok) throw new Error(response.status === 429 ? "RATE_LIMIT" : "NETWORK_FAILURE");
-    const data = await response.json();
+    if (!r.ok) throw new Error(r.status === 429 ? "RATE_LIMIT" : "NETWORK_FAILURE");
+    const data = await r.json();
     return data.choices[0].message.content;
   },
   [AI_PROVIDERS.CLOUDFLARE]: async () => { throw new Error("PROVIDER_NOT_IMPLEMENTED"); }
@@ -294,7 +305,7 @@ const processOfflineQuery = async (text) => {
       return `[LOCAL CORE]: Offline Calculation Result:\n${expression} = ${result}`;
     }
   } catch(e) {}
-  if (lowerText.includes("react")) return "[LOCAL CORE]: React ek JavaScript library hai UI banane ke liye.";
+  if (lowerText.includes("react")) return "[LOCAL CORE]: React ek JavaScript library hai UI banane ke liye. useState state ke liye, useEffect side-effects ke liye.";
   if (lowerText.includes("error") || lowerText.includes("bug")) return "[LOCAL CORE]: Bug strategy:\n1. Console errors padho.\n2. Variables undefined check karo.\n3. Logic trace karo.";
   return `[LOCAL CORE]: Received: "${text}".\n\nMain offline hoon. Basic math, greetings, memory recall, aur standard tech solve kar sakta hoon.`;
 };
@@ -323,7 +334,7 @@ const routeAIRequest = async (agent, messages, userInstructions = "") => {
   throw lastError || new Error("ALL_PROVIDERS_FAILED");
 };
 
-/* ============ ERROR BOUNDARY ============ */
+/* ==================== ERROR BOUNDARY ==================== */
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { hasError: false, err: null }; }
   static getDerivedStateFromError(err) { return { hasError: true, err }; }
@@ -332,7 +343,7 @@ class ErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 bg-black text-red-500 flex flex-col items-center justify-center p-6 z-50">
-          <Activity size={48} className="mb-4 animate-pulse" />
+          <Icon name="Activity" size={48} className="mb-4 animate-pulse" />
           <h1 className="text-xl font-bold mb-2">System Crash</h1>
           <pre className="text-xs text-red-400 max-w-full overflow-auto p-2 bg-red-950/20 rounded">
             {String(this.state.err?.message || this.state.err)}
@@ -347,7 +358,7 @@ class ErrorBoundary extends Component {
   }
 }
 
-/* ============ MAIN APP ============ */
+/* ==================== MAIN APP ==================== */
 function KASourceControlApp() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
@@ -375,7 +386,7 @@ function KASourceControlApp() {
     window.addEventListener('offline', handleOffline);
     window.addEventListener('resize', handleResize);
     loadSessions();
-    getSetting('customInstructions').then(val => setCustomInstructions(val));
+    getSetting('customInstructions').then(v => setCustomInstructions(v));
     runDiagnostics();
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -384,15 +395,16 @@ function KASourceControlApp() {
     };
   }, []);
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
+  useEffect(() => {
+    if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
   const runDiagnostics = () => {
     setDiagnostics(prev => ({
       ...prev,
       [AI_PROVIDERS.GEMINI]: prev[AI_PROVIDERS.GEMINI] === 'Connected (Verified)' ? 'Connected (Verified)' : (getEnvVar('VITE_GEMINI_API_KEY') ? 'Requires Verification' : 'Missing Key'),
       [AI_PROVIDERS.GROQ]: prev[AI_PROVIDERS.GROQ] === 'Connected (Verified)' ? 'Connected (Verified)' : (getEnvVar('VITE_GROQ_API_KEY') ? 'Requires Verification' : 'Missing Key'),
-      [AI_PROVIDERS.OPENROUTER]: prev[AI_PROVIDERS.OPENROUTER] === 'Connected (Verified)' ? 'Connected (Verified)' : (getEnvVar('VITE_OPENROUTER_API_KEY') ? 'Requires Verification' : 'Missing Key'),
-      firebase: 'Missing Config'
+      [AI_PROVIDERS.OPENROUTER]: prev[AI_PROVIDERS.OPENROUTER] === 'Connected (Verified)' ? 'Connected (Verified)' : (getEnvVar('VITE_OPENROUTER_API_KEY') ? 'Requires Verification' : 'Missing Key')
     }));
   };
 
@@ -406,7 +418,9 @@ function KASourceControlApp() {
       setDiagnostics(prev => ({ ...prev, [provider]: 'Connected (Verified)' }));
     } catch (error) {
       setDiagnostics(prev => ({ ...prev, [provider]: 'Failed: ' + error.message }));
-    } finally { setIsTesting(false); }
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   const loadSessions = async () => {
@@ -414,8 +428,12 @@ function KASourceControlApp() {
     setSessions(loaded);
     if (loaded.length > 0) {
       const latest = loaded[0];
-      setActiveSessionId(latest.id); setMessages(latest.messages); setCurrentAgent(latest.agent || 'mentor');
-    } else { createNewSession('mentor'); }
+      setActiveSessionId(latest.id);
+      setMessages(latest.messages);
+      setCurrentAgent(latest.agent || 'mentor');
+    } else {
+      createNewSession('mentor');
+    }
   };
 
   const createNewSession = async (agentMode = currentAgent) => {
@@ -423,10 +441,16 @@ function KASourceControlApp() {
       id: Date.now().toString(),
       title: `New ${agentMode === 'mentor' ? 'Mentorship' : 'Dev'} Session`,
       agent: agentMode,
-      messages: [{ sender: 'ai', text: `System Online. I am K.A ${agentMode === 'mentor' ? 'Mentor' : 'Dev Agent'}. How can I assist you today?`, timestamp: Date.now() }],
+      messages: [{
+        sender: 'ai',
+        text: `System Online. I am K.A ${agentMode === 'mentor' ? 'Mentor' : 'Dev Agent'}. How can I assist you today?`,
+        timestamp: Date.now()
+      }],
       updatedAt: Date.now()
     };
-    setCurrentAgent(agentMode); setActiveSessionId(newSession.id); setMessages(newSession.messages);
+    setCurrentAgent(agentMode);
+    setActiveSessionId(newSession.id);
+    setMessages(newSession.messages);
     setSessions(prev => [newSession, ...prev]);
     await saveChatSession(newSession);
     if (window.innerWidth < 768) setIsSidebarOpen(false);
@@ -435,7 +459,8 @@ function KASourceControlApp() {
   const switchSession = (sessionId) => {
     const session = sessions.find(s => s.id === sessionId);
     if (session) {
-      setActiveSessionId(session.id); setMessages(session.messages);
+      setActiveSessionId(session.id);
+      setMessages(session.messages);
       setCurrentAgent(session.agent || 'mentor');
       if (window.innerWidth < 768) setIsSidebarOpen(false);
     }
@@ -459,12 +484,16 @@ function KASourceControlApp() {
 
     const newUserMsg = { sender: 'user', text, timestamp: Date.now() };
     const updatedMessages = [...messages, newUserMsg];
-    setMessages(updatedMessages); setChatInput(''); setIsTyping(true);
+    setMessages(updatedMessages);
+    setChatInput('');
+    setIsTyping(true);
 
     const updatedSession = {
       id: activeSessionId,
-      title: updatedMessages.length === 2 ? text.substring(0, 30) + '...' : (sessions.find(s=>s.id===activeSessionId)?.title || 'Chat'),
-      agent: currentAgent, messages: updatedMessages, updatedAt: Date.now()
+      title: updatedMessages.length === 2 ? text.substring(0, 30) + '...' : ((sessions.find(s => s.id === activeSessionId) || {}).title || 'Chat'),
+      agent: currentAgent,
+      messages: updatedMessages,
+      updatedAt: Date.now()
     };
     setSessions(sessions.map(s => s.id === activeSessionId ? updatedSession : s));
     await saveChatSession(updatedSession);
@@ -474,29 +503,39 @@ function KASourceControlApp() {
       await saveLocalMemory(memoryToSave);
       const memMsg = { sender: 'system', text: `[MEMORY SAVED]: ${memoryToSave}`, timestamp: Date.now() };
       const finalMsg = [...updatedMessages, memMsg];
-      setMessages(finalMsg); updatedSession.messages = finalMsg;
-      await saveChatSession(updatedSession); setIsTyping(false); return;
+      setMessages(finalMsg);
+      updatedSession.messages = finalMsg;
+      await saveChatSession(updatedSession);
+      setIsTyping(false);
+      return;
     }
 
     try {
       const responseText = await routeAIRequest(currentAgent, updatedMessages, customInstructions);
       const aiMsg = { sender: 'ai', text: responseText, timestamp: Date.now() };
       const finalMessages = [...updatedMessages, aiMsg];
-      setMessages(finalMessages); updatedSession.messages = finalMessages;
+      setMessages(finalMessages);
+      updatedSession.messages = finalMessages;
       await saveChatSession(updatedSession);
     } catch (error) {
       let errorMessage = "SYSTEM NOTICE: AI Router encountered a fatal error.";
       if (error.message === "ALL_PROVIDERS_UNCONFIGURED" || error.message === "API_KEY_MISSING") {
-        errorMessage = `⚠️ Gemini API Key missing hai.\n\nSetup:\n1. Top-right shield icon 🛡️ kholo\n2. PIN: 0001@\n3. "API Keys" section mein key paste karo\n4. Reload karo\n\nFree key: aistudio.google.com/app/apikey`;
+        errorMessage = "⚠️ Gemini API Key missing hai.\n\nSetup:\n1. Top-right shield icon 🛡️ kholo\n2. PIN: 0001@\n3. 'API Keys' section mein key paste karo\n4. Reload karo\n\nFree key: aistudio.google.com/app/apikey";
+      } else if (error.message === "RATE_LIMIT") {
+        errorMessage = "SYSTEM NOTICE: All providers hit Rate Limits.";
+      } else if (error.message === "NETWORK_FAILURE") {
+        errorMessage = "SYSTEM NOTICE: Network failure. Check internet.";
+      } else if (error.message === "REQUEST_TIMEOUT") {
+        errorMessage = "SYSTEM NOTICE: Request timed out.";
       }
-      else if (error.message === "RATE_LIMIT") errorMessage = "SYSTEM NOTICE: All providers hit Rate Limits.";
-      else if (error.message === "NETWORK_FAILURE") errorMessage = "SYSTEM NOTICE: Network failure. Check internet.";
-      else if (error.message === "REQUEST_TIMEOUT") errorMessage = "SYSTEM NOTICE: Request timed out.";
       const errMsg = { sender: 'system', text: errorMessage, timestamp: Date.now(), isError: true };
       const finalMessages = [...updatedMessages, errMsg];
-      setMessages(finalMessages); updatedSession.messages = finalMessages;
+      setMessages(finalMessages);
+      updatedSession.messages = finalMessages;
       await saveChatSession(updatedSession);
-    } finally { setIsTyping(false); }
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleAdminLogin = (e) => {
@@ -517,16 +556,23 @@ function KASourceControlApp() {
             <History size={16} /> HISTORY
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => createNewSession(currentAgent)} className="text-gray-400 hover:text-cyan-400 p-1"><Plus size={18} /></button>
-            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-500 hover:text-white p-1"><X size={20} /></button>
+            <button onClick={() => createNewSession(currentAgent)} className="text-gray-400 hover:text-cyan-400 p-1">
+              <Plus size={18} />
+            </button>
+            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-500 hover:text-white p-1">
+              <X size={20} />
+            </button>
           </div>
         </div>
+
         <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
           {sessions.map(session => (
             <div key={session.id} onClick={() => switchSession(session.id)}
               className={`group w-full text-left p-3 rounded-lg flex justify-between items-center cursor-pointer ${activeSessionId === session.id ? 'bg-white/10 border-l-2 border-cyan-500' : 'hover:bg-white/5'}`}>
               <div className="flex items-center gap-3 overflow-hidden">
-                {session.agent === 'devAgent' ? <Terminal size={14} className="text-purple-500 shrink-0"/> : <MessageSquare size={14} className="text-cyan-500 shrink-0"/>}
+                {session.agent === 'devAgent'
+                  ? <Terminal size={14} className="text-purple-500 shrink-0" />
+                  : <MessageSquare size={14} className="text-cyan-500 shrink-0" />}
                 <span className="text-sm truncate text-gray-300 font-medium">{session.title}</span>
               </div>
               <button onClick={(e) => handleDeleteSession(e, session.id)} className="text-gray-500 hover:text-red-400 p-1">
@@ -536,6 +582,7 @@ function KASourceControlApp() {
           ))}
           {sessions.length === 0 && <div className="text-center text-gray-600 text-xs mt-10">No chat history.</div>}
         </div>
+
         <div className="p-4 border-t border-white/5 bg-black/40">
           <button onClick={() => { setIsSidebarOpen(false); setShowProfilePanel(true); }}
             className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white/5 text-gray-300">
@@ -554,16 +601,20 @@ function KASourceControlApp() {
       <div className="flex-1 flex flex-col h-full relative min-w-0 bg-gradient-to-b from-cyan-950/20 via-[#050505] to-black">
         <header className="h-14 border-b border-white/5 bg-black/40 backdrop-blur-md flex items-center justify-between px-4 z-30">
           <div className="flex items-center gap-3">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white p-1"><Menu size={20} /></button>
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white p-1">
+              <Menu size={20} />
+            </button>
             <div className="flex items-center gap-2">
-              {currentAgent === 'devAgent' ? <Terminal size={18} className="text-purple-500"/> : <BrainCircuit size={18} className="text-cyan-500" />}
+              {currentAgent === 'devAgent'
+                ? <Terminal size={18} className="text-purple-500" />
+                : <BrainCircuit size={18} className="text-cyan-500" />}
               <span className="font-bold tracking-wide text-sm text-gray-100 uppercase">
                 K.A {currentAgent === 'devAgent' ? 'Dev Agent' : 'Mentor'}
               </span>
             </div>
             {!isOnline && (
               <span className="flex items-center gap-1 text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 ml-2">
-                <CloudOff size={10}/> OFFLINE
+                <CloudOff size={10} /> OFFLINE
               </span>
             )}
           </div>
@@ -578,11 +629,16 @@ function KASourceControlApp() {
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-4 text-sm whitespace-pre-wrap leading-relaxed ${
-                msg.sender === 'user' ? 'bg-cyan-800/20 text-cyan-50 border border-cyan-500/30 rounded-tr-sm'
-                  : msg.isError ? 'bg-red-900/20 text-red-400 border border-red-500/20 rounded-tl-sm'
-                  : msg.sender === 'system' ? 'bg-amber-900/10 text-amber-300 border border-amber-500/20 rounded-tl-sm text-xs font-mono'
-                  : 'bg-[#111] text-gray-200 border border-white/5 rounded-tl-sm'
-              }`}>{msg.text}</div>
+                msg.sender === 'user'
+                  ? 'bg-cyan-800/20 text-cyan-50 border border-cyan-500/30 rounded-tr-sm'
+                  : msg.isError
+                    ? 'bg-red-900/20 text-red-400 border border-red-500/20 rounded-tl-sm'
+                    : msg.sender === 'system'
+                      ? 'bg-amber-900/10 text-amber-300 border border-amber-500/20 rounded-tl-sm text-xs font-mono'
+                      : 'bg-[#111] text-gray-200 border border-white/5 rounded-tl-sm'
+              }`}>
+                {msg.text}
+              </div>
             </div>
           ))}
           {isTyping && (
@@ -618,40 +674,54 @@ function KASourceControlApp() {
           <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl w-full max-w-md relative">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-cyan-500"></div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold flex items-center gap-2"><Shield className="text-cyan-500"/> System Terminal</h2>
-              <button onClick={() => setShowAdminPanel(false)} className="text-gray-500 hover:text-white bg-white/5 p-1.5 rounded-lg"><X size={18}/></button>
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Shield className="text-cyan-500" /> System Terminal
+              </h2>
+              <button onClick={() => setShowAdminPanel(false)} className="text-gray-500 hover:text-white bg-white/5 p-1.5 rounded-lg">
+                <X size={18} />
+              </button>
             </div>
+
             {!isAdminAuth ? (
               <form onSubmit={handleAdminLogin} className="space-y-4">
                 <p className="text-sm text-gray-400 bg-white/5 p-3 rounded">Restricted. Verify identity.</p>
                 <div className="relative">
                   <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input type="password" value={adminPin} onChange={(e) => setAdminPin(e.target.value)}
-                    placeholder="PIN (0001@)" className="w-full bg-[#111] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:border-cyan-500 outline-none" />
+                    placeholder="PIN (0001@)"
+                    className="w-full bg-[#111] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:border-cyan-500 outline-none" />
                 </div>
-                <button type="submit" className="w-full bg-cyan-900/50 border border-cyan-800 text-cyan-400 rounded-lg p-3 font-bold">Authorize</button>
+                <button type="submit" className="w-full bg-cyan-900/50 border border-cyan-800 text-cyan-400 rounded-lg p-3 font-bold">
+                  Authorize
+                </button>
               </form>
             ) : (
               <div className="space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
                 <div className="p-3 bg-green-900/20 border border-green-500/30 rounded-lg text-green-400 text-xs font-mono flex items-center gap-2">
-                  <CheckCircle size={14}/> ROOT ACCESS GRANTED
+                  <CheckCircle size={14} /> ROOT ACCESS GRANTED
                 </div>
 
                 <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                   <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider flex items-center gap-2">
-                    <Lock size={14}/> API Keys (device par save)
+                    <Lock size={14} /> API Keys (device par save)
                   </h3>
                   <div className="space-y-2">
                     {[
                       { k: 'VITE_GEMINI_API_KEY', l: 'Gemini API Key (required)' },
                       { k: 'VITE_GROQ_API_KEY', l: 'Groq API Key (optional)' },
                       { k: 'VITE_OPENROUTER_API_KEY', l: 'OpenRouter API Key (optional)' }
-                    ].map(({k, l}) => (
+                    ].map(({ k, l }) => (
                       <div key={k}>
                         <label className="text-[10px] text-gray-500 block mb-1">{l}</label>
                         <input type="password" defaultValue={localStorage.getItem(k) || ''}
-                          onBlur={(e) => { const v = e.target.value.trim(); if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); runDiagnostics(); }}
-                          placeholder="Paste key..." className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg p-2 text-xs text-gray-300 focus:border-cyan-500/50 outline-none" />
+                          onBlur={(e) => {
+                            const v = e.target.value.trim();
+                            if (v) localStorage.setItem(k, v);
+                            else localStorage.removeItem(k);
+                            runDiagnostics();
+                          }}
+                          placeholder="Paste key..."
+                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg p-2 text-xs text-gray-300 focus:border-cyan-500/50 outline-none" />
                       </div>
                     ))}
                   </div>
@@ -660,19 +730,29 @@ function KASourceControlApp() {
 
                 <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                   <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider flex items-center gap-2">
-                    <BrainCircuit size={14}/> Agent Override
+                    <BrainCircuit size={14} /> Agent Override
                   </h3>
                   <div className="flex gap-2">
-                    <button onClick={() => { const s = sessions.find(x=>x.agent==='mentor'); s ? switchSession(s.id) : createNewSession('mentor'); setShowAdminPanel(false); }}
-                      className={`flex-1 py-2.5 px-2 text-xs font-semibold rounded-md ${currentAgent === 'mentor' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-800' : 'bg-black border border-white/5 text-gray-400'}`}>K.A Mentor</button>
-                    <button onClick={() => { const s = sessions.find(x=>x.agent==='devAgent'); s ? switchSession(s.id) : createNewSession('devAgent'); setShowAdminPanel(false); }}
-                      className={`flex-1 py-2.5 px-2 text-xs font-semibold rounded-md ${currentAgent === 'devAgent' ? 'bg-purple-900/40 text-purple-400 border border-purple-800' : 'bg-black border border-white/5 text-gray-400'}`}>Dev Agent</button>
+                    <button onClick={() => {
+                      const s = sessions.find(x => x.agent === 'mentor');
+                      if (s) switchSession(s.id); else createNewSession('mentor');
+                      setShowAdminPanel(false);
+                    }} className={`flex-1 py-2.5 px-2 text-xs font-semibold rounded-md ${currentAgent === 'mentor' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-800' : 'bg-black border border-white/5 text-gray-400'}`}>
+                      K.A Mentor
+                    </button>
+                    <button onClick={() => {
+                      const s = sessions.find(x => x.agent === 'devAgent');
+                      if (s) switchSession(s.id); else createNewSession('devAgent');
+                      setShowAdminPanel(false);
+                    }} className={`flex-1 py-2.5 px-2 text-xs font-semibold rounded-md ${currentAgent === 'devAgent' ? 'bg-purple-900/40 text-purple-400 border border-purple-800' : 'bg-black border border-white/5 text-gray-400'}`}>
+                      Dev Agent
+                    </button>
                   </div>
                 </div>
 
                 <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                   <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider flex items-center gap-2">
-                    <Server size={14}/> Router Cascade Status
+                    <Server size={14} /> Router Cascade Status
                   </h3>
                   <div className="space-y-2">
                     {Object.entries(diagnostics).map(([provider, status]) => (
@@ -680,10 +760,13 @@ function KASourceControlApp() {
                         <span className="text-xs text-gray-300 capitalize">{provider}</span>
                         <div className="flex items-center gap-2">
                           <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                            status.includes('Verified') || status === 'Connected' ? 'bg-green-900/30 text-green-400'
-                            : status.includes('Failed') ? 'bg-red-900/30 text-red-400'
-                            : 'bg-amber-900/30 text-amber-400'}`}>{status}</span>
-                          {status === 'Requires Verification' && provider !== 'firebase' && (
+                            status.includes('Verified') || status === 'Connected'
+                              ? 'bg-green-900/30 text-green-400'
+                              : status.includes('Failed')
+                                ? 'bg-red-900/30 text-red-400'
+                                : 'bg-amber-900/30 text-amber-400'
+                          }`}>{status}</span>
+                          {status === 'Requires Verification' && (
                             <button onClick={() => handleVerifyProvider(provider)} disabled={isTesting === provider}
                               className="text-[10px] bg-cyan-900/50 text-cyan-400 px-2 py-0.5 rounded">
                               {isTesting === provider ? '...' : 'Test'}
@@ -695,8 +778,9 @@ function KASourceControlApp() {
                   </div>
                 </div>
 
-                <button onClick={() => setIsAdminAuth(false)} className="w-full flex justify-center items-center gap-2 bg-transparent hover:bg-white/5 rounded-lg p-3 text-gray-500 text-xs">
-                  <LogOut size={14}/> Lock Session
+                <button onClick={() => setIsAdminAuth(false)}
+                  className="w-full flex justify-center items-center gap-2 bg-transparent hover:bg-white/5 rounded-lg p-3 text-gray-500 text-xs">
+                  <LogOut size={14} /> Lock Session
                 </button>
               </div>
             )}
@@ -717,12 +801,15 @@ function KASourceControlApp() {
                   <p className="text-xs text-gray-500 font-mono">Offline / Local DB</p>
                 </div>
               </div>
-              <button onClick={() => setShowProfilePanel(false)} className="text-gray-500 hover:text-white bg-white/5 p-2 rounded-full"><X size={16}/></button>
+              <button onClick={() => setShowProfilePanel(false)} className="text-gray-500 hover:text-white bg-white/5 p-2 rounded-full">
+                <X size={16} />
+              </button>
             </div>
+
             <div className="space-y-4 mb-6">
               <div className="bg-white/5 p-3 rounded-xl border border-white/5">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <BrainCircuit size={14}/> Personal Instructions
+                  <BrainCircuit size={14} /> Personal Instructions
                 </label>
                 <textarea value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)}
                   placeholder="How should K.A Mentor respond?"
@@ -736,6 +823,7 @@ function KASourceControlApp() {
                   {isSavingSettings ? "Saving..." : "Save Instructions"}
                 </button>
               </div>
+
               <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <HardDrive size={16} className="text-gray-400" />
@@ -744,7 +832,11 @@ function KASourceControlApp() {
                 <span className="text-xs bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded">Active</span>
               </div>
             </div>
-            <button onClick={() => setShowProfilePanel(false)} className="w-full py-3 bg-white/10 hover:bg-white/15 text-white text-sm font-semibold rounded-xl">Close</button>
+
+            <button onClick={() => setShowProfilePanel(false)}
+              className="w-full py-3 bg-white/10 hover:bg-white/15 text-white text-sm font-semibold rounded-xl">
+              Close Profile
+            </button>
           </div>
         </div>
       )}
@@ -757,12 +849,6 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-}
 </script>
 </body>
 </html>
