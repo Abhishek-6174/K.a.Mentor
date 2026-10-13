@@ -13,7 +13,10 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg" />
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/lucide@0.400.0/dist/umd/lucide.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
 
 <style>
   * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -23,32 +26,98 @@
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  #boot-error { display: none; color: #ef4444; padding: 20px; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
 </style>
 </head>
 <body>
 <div id="root"></div>
+<div id="boot-error"></div>
 
-<script type="text/babel" data-type="module" data-presets="react">
-import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
-import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client?deps=react@18.2.0';
-import {
-  Send, Terminal, History, Play, CheckCircle,
-  User, Settings, Database, Activity, Lock,
-  ArrowLeft, Eye, EyeOff, Shield, Menu, Plus,
-  MessageSquare, Trash2, Edit2, Wifi, WifiOff,
-  CloudOff, HardDrive, BrainCircuit, X, ChevronRight, LogOut, Save,
-  Server, Zap, Globe
-} from 'https://esm.sh/lucide-react@0.400.0?deps=react@18.2.0';
+<script>
+  window.addEventListener('error', (e) => {
+    const box = document.getElementById('boot-error');
+    if (box) {
+      box.style.display = 'block';
+      box.textContent += '\n[ERROR] ' + e.message + '\n' + (e.filename || '') + ':' + (e.lineno || '');
+    }
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const box = document.getElementById('boot-error');
+    if (box) {
+      box.style.display = 'block';
+      box.textContent += '\n[PROMISE] ' + (e.reason?.message || e.reason);
+    }
+  });
+</script>
 
-// === ENV VAR (localStorage-backed) ===
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, Component } = React;
+
+/* ============ LUCIDE ICON WRAPPER ============ */
+function Icon({ name, size = 16, className = "", strokeWidth = 2 }) {
+  const lib = window.lucide || {};
+  const node = lib[name];
+  if (!node || !Array.isArray(node)) {
+    return React.createElement('svg', {
+      width: size, height: size, viewBox: '0 0 24 24',
+      fill: 'none', stroke: 'currentColor', strokeWidth,
+      strokeLinecap: 'round', strokeLinejoin: 'round', className
+    });
+  }
+  const children = node.map((child, i) => {
+    if (!Array.isArray(child)) return null;
+    const [tag, attrs] = child;
+    return React.createElement(tag, { key: i, ...(attrs || {}) });
+  });
+  return React.createElement('svg', {
+    xmlns: 'http://www.w3.org/2000/svg',
+    width: size, height: size, viewBox: '0 0 24 24',
+    fill: 'none', stroke: 'currentColor', strokeWidth,
+    strokeLinecap: 'round', strokeLinejoin: 'round', className
+  }, children);
+}
+
+// Aliases so the rest of the code works unchanged
+const Send = (p) => <Icon name="Send" {...p} />;
+const Terminal = (p) => <Icon name="Terminal" {...p} />;
+const History = (p) => <Icon name="History" {...p} />;
+const Play = (p) => <Icon name="Play" {...p} />;
+const CheckCircle = (p) => <Icon name="CheckCircle" {...p} />;
+const User = (p) => <Icon name="User" {...p} />;
+const Settings = (p) => <Icon name="Settings" {...p} />;
+const Database = (p) => <Icon name="Database" {...p} />;
+const Activity = (p) => <Icon name="Activity" {...p} />;
+const Lock = (p) => <Icon name="Lock" {...p} />;
+const ArrowLeft = (p) => <Icon name="ArrowLeft" {...p} />;
+const Eye = (p) => <Icon name="Eye" {...p} />;
+const EyeOff = (p) => <Icon name="EyeOff" {...p} />;
+const Shield = (p) => <Icon name="Shield" {...p} />;
+const Menu = (p) => <Icon name="Menu" {...p} />;
+const Plus = (p) => <Icon name="Plus" {...p} />;
+const MessageSquare = (p) => <Icon name="MessageSquare" {...p} />;
+const Trash2 = (p) => <Icon name="Trash2" {...p} />;
+const Edit2 = (p) => <Icon name="Edit2" {...p} />;
+const Wifi = (p) => <Icon name="Wifi" {...p} />;
+const WifiOff = (p) => <Icon name="WifiOff" {...p} />;
+const CloudOff = (p) => <Icon name="CloudOff" {...p} />;
+const HardDrive = (p) => <Icon name="HardDrive" {...p} />;
+const BrainCircuit = (p) => <Icon name="BrainCircuit" {...p} />;
+const X = (p) => <Icon name="X" {...p} />;
+const ChevronRight = (p) => <Icon name="ChevronRight" {...p} />;
+const LogOut = (p) => <Icon name="LogOut" {...p} />;
+const Save = (p) => <Icon name="Save" {...p} />;
+const Server = (p) => <Icon name="Server" {...p} />;
+const Zap = (p) => <Icon name="Zap" {...p} />;
+const Globe = (p) => <Icon name="Globe" {...p} />;
+
+/* ============ ENV ============ */
 const getEnvVar = (key) => {
   try { const v = localStorage.getItem(key); if (v) return v; } catch(e) {}
   return '';
 };
-
 const isFirebaseConfigured = false;
 
-// === INDEXED DB ===
+/* ============ INDEXED DB ============ */
 const initLocalDB = () => new Promise((resolve, reject) => {
   const request = indexedDB.open('KAMentorLocalBrain', 3);
   request.onupgradeneeded = (e) => {
@@ -60,62 +129,48 @@ const initLocalDB = () => new Promise((resolve, reject) => {
   request.onsuccess = () => resolve(request.result);
   request.onerror = () => reject(request.error);
 });
-
 const saveSetting = async (key, value) => {
-  try {
-    const database = await initLocalDB();
-    database.transaction(['settings'], 'readwrite').objectStore('settings').put({ key, value });
-  } catch(e) { console.error(e); }
+  try { const d = await initLocalDB(); d.transaction(['settings'], 'readwrite').objectStore('settings').put({ key, value }); } catch(e){}
 };
 const getSetting = async (key) => {
   try {
-    const database = await initLocalDB();
-    return new Promise((resolve) => {
-      const request = database.transaction(['settings'], 'readonly').objectStore('settings').get(key);
-      request.onsuccess = () => resolve(request.result?.value || "");
+    const d = await initLocalDB();
+    return new Promise((res) => {
+      const r = d.transaction(['settings'],'readonly').objectStore('settings').get(key);
+      r.onsuccess = () => res(r.result?.value || "");
     });
   } catch(e) { return ""; }
 };
-const saveLocalMemory = async (memoryText) => {
-  try {
-    const database = await initLocalDB();
-    database.transaction(['memories'], 'readwrite').objectStore('memories').put({ id: Date.now().toString(), text: memoryText, timestamp: Date.now() });
-  } catch(e) { console.error(e); }
+const saveLocalMemory = async (text) => {
+  try { const d = await initLocalDB(); d.transaction(['memories'],'readwrite').objectStore('memories').put({ id: Date.now().toString(), text, timestamp: Date.now() }); } catch(e){}
 };
 const getLocalMemories = async () => {
   try {
-    const database = await initLocalDB();
-    return new Promise((resolve) => {
-      const request = database.transaction(['memories'], 'readonly').objectStore('memories').getAll();
-      request.onsuccess = () => resolve(request.result || []);
+    const d = await initLocalDB();
+    return new Promise((res) => {
+      const r = d.transaction(['memories'],'readonly').objectStore('memories').getAll();
+      r.onsuccess = () => res(r.result || []);
     });
   } catch(e) { return []; }
 };
-const saveChatSession = async (session) => {
-  try {
-    const database = await initLocalDB();
-    database.transaction(['chatSessions'], 'readwrite').objectStore('chatSessions').put(session);
-  } catch(e) { console.error(e); }
+const saveChatSession = async (s) => {
+  try { const d = await initLocalDB(); d.transaction(['chatSessions'],'readwrite').objectStore('chatSessions').put(s); } catch(e){}
 };
 const getChatSessions = async () => {
   try {
-    const database = await initLocalDB();
-    return new Promise((resolve) => {
-      const request = database.transaction(['chatSessions'], 'readonly').objectStore('chatSessions').getAll();
-      request.onsuccess = () => resolve(request.result?.sort((a,b) => b.updatedAt - a.updatedAt) || []);
+    const d = await initLocalDB();
+    return new Promise((res) => {
+      const r = d.transaction(['chatSessions'],'readonly').objectStore('chatSessions').getAll();
+      r.onsuccess = () => res(r.result?.sort((a,b)=>b.updatedAt-a.updatedAt) || []);
     });
   } catch(e) { return []; }
 };
 const deleteChatSession = async (id) => {
-  try {
-    const database = await initLocalDB();
-    database.transaction(['chatSessions'], 'readwrite').objectStore('chatSessions').delete(id);
-  } catch(e) { console.error(e); }
+  try { const d = await initLocalDB(); d.transaction(['chatSessions'],'readwrite').objectStore('chatSessions').delete(id); } catch(e){}
 };
 
-// === PROVIDERS ===
+/* ============ ROUTER ============ */
 const AI_PROVIDERS = { GEMINI:'gemini', GROQ:'groq', OPENROUTER:'openrouter', CLOUDFLARE:'cloudflare' };
-const USE_SECURE_BACKEND = false;
 
 const ROUTER_CONFIG = {
   mentor: {
@@ -134,12 +189,12 @@ const ROUTER_CONFIG = {
       [AI_PROVIDERS.GROQ]: 'llama3-70b-8192',
       [AI_PROVIDERS.OPENROUTER]: 'anthropic/claude-3.5-haiku'
     },
-    systemPrompt: "You are K.A Dev Agent, an elite senior software engineer and architect. Your core role is to intelligently preview, modify, and update the entire application seamlessly. Analyze the architecture, maintain modularity, and output exactly in the required structured format."
+    systemPrompt: "You are K.A Dev Agent, an elite senior software engineer and architect."
   }
 };
 
 const fetchWithTimeout = async (resource, options = {}) => {
-  const { timeout = 10000 } = options;
+  const { timeout = 15000 } = options;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -210,7 +265,7 @@ const processOfflineQuery = async (text) => {
     return `[LOCAL CORE]: Operating offline. Local memories:\n\n${memories.map(m => `• ${m.text}`).join('\n')}`;
   }
   if (lowerText.match(/^(hi|hello|hey|kaise ho|namaste|who are you|tum kaun ho)/)) {
-    return "[LOCAL CORE]: Hello! Main abhi offline hoon aur apne local fallback engine par chal raha hoon. Main aapse basic baat-cheet kar sakta hoon, math calculations solve kar sakta hoon, aur basic tech/logic concepts bata sakta hoon.";
+    return "[LOCAL CORE]: Hello! Main abhi offline hoon aur local fallback engine par chal raha hoon. Basic baat-cheet, math, aur tech concepts handle kar sakta hoon.";
   }
   try {
     const mathMatch = text.match(/[\d\.\s\+\-\*\/\(\)]+/);
@@ -220,9 +275,9 @@ const processOfflineQuery = async (text) => {
       return `[LOCAL CORE]: Offline Calculation Result:\n${expression} = ${result}`;
     }
   } catch(e) {}
-  if (lowerText.includes("react")) return "[LOCAL CORE]: React ek JavaScript library hai UI banane ke liye. Offline Tip: useState state ke liye, useEffect side-effects ke liye.";
-  if (lowerText.includes("error") || lowerText.includes("bug")) return "[LOCAL CORE]: Bug solve strategy:\n1. Console errors padho.\n2. Variables undefined check karo.\n3. Logic trace karo.";
-  return `[LOCAL CORE]: Received: "${text}".\n\nMain abhi internet se disconnected hoon. Offline brain basic math, greetings, memory recall, aur standard tech solve kar sakta hai.`;
+  if (lowerText.includes("react")) return "[LOCAL CORE]: React ek JavaScript library hai UI banane ke liye.";
+  if (lowerText.includes("error") || lowerText.includes("bug")) return "[LOCAL CORE]: Bug strategy:\n1. Console errors padho.\n2. Variables undefined check karo.\n3. Logic trace karo.";
+  return `[LOCAL CORE]: Received: "${text}".\n\nMain offline hoon. Basic math, greetings, memory recall, aur standard tech solve kar sakta hoon.`;
 };
 
 const routeAIRequest = async (agent, messages, userInstructions = "") => {
@@ -238,10 +293,8 @@ const routeAIRequest = async (agent, messages, userInstructions = "") => {
     try {
       const model = config.models[provider];
       if (!model) continue;
-      console.info(`[ROUTER] Attempting: ${provider}`);
       return await adapters[provider](recentMessages, finalSystemPrompt, model);
     } catch (error) {
-      console.warn(`[ROUTER] ${provider} failed:`, error.message);
       lastError = error;
       if (['RATE_LIMIT','NETWORK_FAILURE','REQUEST_TIMEOUT','API_KEY_MISSING'].includes(error.message)) continue;
       throw error;
@@ -251,17 +304,23 @@ const routeAIRequest = async (agent, messages, userInstructions = "") => {
   throw lastError || new Error("ALL_PROVIDERS_FAILED");
 };
 
-class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false }; }
-  static getDerivedStateFromError() { return { hasError: true }; }
+/* ============ ERROR BOUNDARY ============ */
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { hasError: false, err: null }; }
+  static getDerivedStateFromError(err) { return { hasError: true, err }; }
   componentDidCatch(error, info) { console.error("Crash:", error, info); }
   render() {
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 bg-black text-red-500 flex flex-col items-center justify-center p-6 z-50">
           <Activity size={48} className="mb-4 animate-pulse" />
-          <h1 className="text-xl font-bold mb-2">System Crash Detected</h1>
-          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-red-900/30 border border-red-500 rounded-lg text-white mt-4">Reboot Core</button>
+          <h1 className="text-xl font-bold mb-2">System Crash</h1>
+          <pre className="text-xs text-red-400 max-w-full overflow-auto p-2 bg-red-950/20 rounded">
+            {String(this.state.err?.message || this.state.err)}
+          </pre>
+          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-red-900/30 border border-red-500 rounded-lg text-white mt-4">
+            Reboot
+          </button>
         </div>
       );
     }
@@ -269,6 +328,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+/* ============ MAIN APP ============ */
 function KASourceControlApp() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
@@ -291,7 +351,7 @@ function KASourceControlApp() {
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-    const handleResize = () => { if (window.innerWidth > 768) setIsSidebarOpen(true); else setIsSidebarOpen(false); };
+    const handleResize = () => { if (window.innerWidth > 768) setIsSidebarOpen(true); };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('resize', handleResize);
@@ -313,19 +373,17 @@ function KASourceControlApp() {
       [AI_PROVIDERS.GEMINI]: prev[AI_PROVIDERS.GEMINI] === 'Connected (Verified)' ? 'Connected (Verified)' : (getEnvVar('VITE_GEMINI_API_KEY') ? 'Requires Verification' : 'Missing Key'),
       [AI_PROVIDERS.GROQ]: prev[AI_PROVIDERS.GROQ] === 'Connected (Verified)' ? 'Connected (Verified)' : (getEnvVar('VITE_GROQ_API_KEY') ? 'Requires Verification' : 'Missing Key'),
       [AI_PROVIDERS.OPENROUTER]: prev[AI_PROVIDERS.OPENROUTER] === 'Connected (Verified)' ? 'Connected (Verified)' : (getEnvVar('VITE_OPENROUTER_API_KEY') ? 'Requires Verification' : 'Missing Key'),
-      [AI_PROVIDERS.CLOUDFLARE]: prev[AI_PROVIDERS.CLOUDFLARE] === 'Connected (Verified)' ? 'Connected (Verified)' : ((getEnvVar('VITE_CLOUDFLARE_API_KEY') && getEnvVar('VITE_CLOUDFLARE_ACCOUNT_ID')) ? 'Requires Verification' : 'Missing Config'),
-      firebase: isFirebaseConfigured ? 'Connected' : 'Missing Config'
+      firebase: 'Missing Config'
     }));
   };
 
   const handleVerifyProvider = async (provider) => {
     setIsTesting(provider);
     try {
-      const config = ROUTER_CONFIG.mentor;
-      const model = config.models[provider];
-      if (!model) throw new Error("No model mapped");
+      const model = ROUTER_CONFIG.mentor.models[provider];
+      if (!model) throw new Error("No model");
       const testMsg = [{ sender: 'user', text: 'Respond with exactly one word: OK', timestamp: Date.now() }];
-      await adapters[provider](testMsg, "System diagnostic. Keep it brief.", model);
+      await adapters[provider](testMsg, "System diagnostic.", model);
       setDiagnostics(prev => ({ ...prev, [provider]: 'Connected (Verified)' }));
     } catch (error) {
       setDiagnostics(prev => ({ ...prev, [provider]: 'Failed: ' + error.message }));
@@ -350,7 +408,7 @@ function KASourceControlApp() {
       updatedAt: Date.now()
     };
     setCurrentAgent(agentMode); setActiveSessionId(newSession.id); setMessages(newSession.messages);
-    const updated = [newSession, ...sessions]; setSessions(updated);
+    setSessions(prev => [newSession, ...prev]);
     await saveChatSession(newSession);
     if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
@@ -379,12 +437,14 @@ function KASourceControlApp() {
     e.preventDefault();
     const text = chatInput.trim();
     if (!text || isTyping) return;
+
     const newUserMsg = { sender: 'user', text, timestamp: Date.now() };
     const updatedMessages = [...messages, newUserMsg];
     setMessages(updatedMessages); setChatInput(''); setIsTyping(true);
+
     const updatedSession = {
       id: activeSessionId,
-      title: updatedMessages.length === 2 ? text.substring(0, 30) + '...' : sessions.find(s=>s.id===activeSessionId)?.title || 'Chat',
+      title: updatedMessages.length === 2 ? text.substring(0, 30) + '...' : (sessions.find(s=>s.id===activeSessionId)?.title || 'Chat'),
       agent: currentAgent, messages: updatedMessages, updatedAt: Date.now()
     };
     setSessions(sessions.map(s => s.id === activeSessionId ? updatedSession : s));
@@ -408,11 +468,11 @@ function KASourceControlApp() {
     } catch (error) {
       let errorMessage = "SYSTEM NOTICE: AI Router encountered a fatal error.";
       if (error.message === "ALL_PROVIDERS_UNCONFIGURED" || error.message === "API_KEY_MISSING") {
-        errorMessage = `⚠️ Gemini API Key missing hai.\n\nSetup kaise karein:\n1. Admin panel (top-right shield icon) kholo\n2. PIN: 0001@\n3. "API Keys" section mein apni key paste karo\n4. Reload karo`;
+        errorMessage = `⚠️ Gemini API Key missing hai.\n\nSetup:\n1. Top-right shield icon 🛡️ kholo\n2. PIN: 0001@\n3. "API Keys" section mein key paste karo\n4. Reload karo\n\nFree key: aistudio.google.com/app/apikey`;
       }
       else if (error.message === "RATE_LIMIT") errorMessage = "SYSTEM NOTICE: All providers hit Rate Limits.";
       else if (error.message === "NETWORK_FAILURE") errorMessage = "SYSTEM NOTICE: Network failure. Check internet.";
-      else if (error.message === "REQUEST_TIMEOUT") errorMessage = "SYSTEM NOTICE: Request timed out (10s).";
+      else if (error.message === "REQUEST_TIMEOUT") errorMessage = "SYSTEM NOTICE: Request timed out.";
       const errMsg = { sender: 'system', text: errorMessage, timestamp: Date.now(), isError: true };
       const finalMessages = [...updatedMessages, errMsg];
       setMessages(finalMessages); updatedSession.messages = finalMessages;
@@ -427,12 +487,12 @@ function KASourceControlApp() {
   };
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden selection:bg-cyan-900 relative">
+    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden relative">
       {isSidebarOpen && (
         <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      <div className={`fixed md:relative z-50 h-full flex flex-col bg-[#0a0a0a] border-r border-white/5 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'w-72 translate-x-0' : 'w-72 -translate-x-full md:w-0 md:border-none'}`}>
+      <div className={`fixed md:relative z-50 h-full flex flex-col bg-[#0a0a0a] border-r border-white/5 transition-transform duration-300 ${isSidebarOpen ? 'w-72 translate-x-0' : 'w-72 -translate-x-full md:w-0 md:border-none'}`}>
         <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black">
           <div className="flex items-center gap-2 text-cyan-500 font-bold tracking-widest text-sm">
             <History size={16} /> HISTORY
@@ -445,12 +505,12 @@ function KASourceControlApp() {
         <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
           {sessions.map(session => (
             <div key={session.id} onClick={() => switchSession(session.id)}
-              className={`group w-full text-left p-3 rounded-lg flex justify-between items-center cursor-pointer transition-colors ${activeSessionId === session.id ? 'bg-white/10 border-l-2 border-cyan-500' : 'hover:bg-white/5'}`}>
+              className={`group w-full text-left p-3 rounded-lg flex justify-between items-center cursor-pointer ${activeSessionId === session.id ? 'bg-white/10 border-l-2 border-cyan-500' : 'hover:bg-white/5'}`}>
               <div className="flex items-center gap-3 overflow-hidden">
                 {session.agent === 'devAgent' ? <Terminal size={14} className="text-purple-500 shrink-0"/> : <MessageSquare size={14} className="text-cyan-500 shrink-0"/>}
                 <span className="text-sm truncate text-gray-300 font-medium">{session.title}</span>
               </div>
-              <button onClick={(e) => handleDeleteSession(e, session.id)} className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 p-1">
+              <button onClick={(e) => handleDeleteSession(e, session.id)} className="text-gray-500 hover:text-red-400 p-1">
                 <Trash2 size={14} />
               </button>
             </div>
@@ -472,7 +532,7 @@ function KASourceControlApp() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col h-full relative min-w-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-900/10 via-[#050505] to-[#000000]">
+      <div className="flex-1 flex flex-col h-full relative min-w-0 bg-gradient-to-b from-cyan-950/20 via-[#050505] to-black">
         <header className="h-14 border-b border-white/5 bg-black/40 backdrop-blur-md flex items-center justify-between px-4 z-30">
           <div className="flex items-center gap-3">
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white p-1"><Menu size={20} /></button>
@@ -489,13 +549,13 @@ function KASourceControlApp() {
             )}
           </div>
           <button onClick={() => setShowAdminPanel(true)}
-            className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10">
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10">
             <Shield size={14} className={isAdminAuth ? "text-green-400" : "text-gray-400"} />
             <span className="text-xs font-semibold text-gray-400 hidden sm:block">Admin</span>
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-6 scroll-smooth max-w-4xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-6 max-w-4xl mx-auto w-full">
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-4 text-sm whitespace-pre-wrap leading-relaxed ${
@@ -508,7 +568,7 @@ function KASourceControlApp() {
           ))}
           {isTyping && (
             <div className="flex justify-start">
-              <div className="max-w-[85%] rounded-2xl p-4 bg-[#111] border border-white/5 rounded-tl-sm flex items-center gap-2">
+              <div className="rounded-2xl p-4 bg-[#111] border border-white/5 rounded-tl-sm flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse"></div>
                 <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
                 <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
@@ -519,16 +579,16 @@ function KASourceControlApp() {
         </div>
 
         <div className="p-4 max-w-4xl mx-auto w-full bg-gradient-to-t from-black to-transparent">
-          <form onSubmit={handleSendMessage} className="relative group">
+          <form onSubmit={handleSendMessage} className="relative">
             <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
               placeholder={isOnline ? `Message ${currentAgent === 'devAgent' ? 'Dev Agent' : 'K.A Mentor'}...` : "Offline: 'remember: [text]' ya 'memory'"}
-              className="w-full bg-[#151515] border border-white/10 rounded-xl py-4 pl-5 pr-14 text-sm text-white focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 placeholder:text-gray-600" />
+              className="w-full bg-[#151515] border border-white/10 rounded-xl py-4 pl-5 pr-14 text-sm text-white focus:outline-none focus:border-cyan-500/50 placeholder:text-gray-600" />
             <button type="submit" disabled={isTyping || !chatInput.trim()}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 disabled:opacity-30">
               <Send size={18} />
             </button>
           </form>
-          <div className="text-center text-[10px] text-gray-600 mt-3 tracking-wide">
+          <div className="text-center text-[10px] text-gray-600 mt-3">
             K.A Core AI System • {isOnline ? 'Multi-Provider Router Active' : 'Operating Offline'}
           </div>
         </div>
@@ -536,7 +596,7 @@ function KASourceControlApp() {
 
       {showAdminPanel && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
+          <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl w-full max-w-md relative">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-cyan-500"></div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold flex items-center gap-2"><Shield className="text-cyan-500"/> System Terminal</h2>
@@ -560,23 +620,23 @@ function KASourceControlApp() {
 
                 <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                   <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider flex items-center gap-2">
-                    <Lock size={14}/> API Keys (device par save hote hain)
+                    <Lock size={14}/> API Keys (device par save)
                   </h3>
                   <div className="space-y-2">
                     {[
-                      { k: 'VITE_GEMINI_API_KEY', l: 'Gemini API Key' },
+                      { k: 'VITE_GEMINI_API_KEY', l: 'Gemini API Key (required)' },
                       { k: 'VITE_GROQ_API_KEY', l: 'Groq API Key (optional)' },
                       { k: 'VITE_OPENROUTER_API_KEY', l: 'OpenRouter API Key (optional)' }
                     ].map(({k, l}) => (
                       <div key={k}>
                         <label className="text-[10px] text-gray-500 block mb-1">{l}</label>
                         <input type="password" defaultValue={localStorage.getItem(k) || ''}
-                          onBlur={(e) => { const v = e.target.value.trim(); if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); }}
+                          onBlur={(e) => { const v = e.target.value.trim(); if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); runDiagnostics(); }}
                           placeholder="Paste key..." className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg p-2 text-xs text-gray-300 focus:border-cyan-500/50 outline-none" />
                       </div>
                     ))}
                   </div>
-                  <p className="text-[10px] text-amber-400 mt-2">⚠️ Save karne ke baad app reload karo.</p>
+                  <p className="text-[10px] text-amber-400 mt-2">⚠️ Key paste karne ke baad app reload karo.</p>
                 </div>
 
                 <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
@@ -584,9 +644,9 @@ function KASourceControlApp() {
                     <BrainCircuit size={14}/> Agent Override
                   </h3>
                   <div className="flex gap-2">
-                    <button onClick={() => { const s = sessions.find(s=>s.agent==='mentor'); s ? switchSession(s.id) : createNewSession('mentor'); setShowAdminPanel(false); }}
+                    <button onClick={() => { const s = sessions.find(x=>x.agent==='mentor'); s ? switchSession(s.id) : createNewSession('mentor'); setShowAdminPanel(false); }}
                       className={`flex-1 py-2.5 px-2 text-xs font-semibold rounded-md ${currentAgent === 'mentor' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-800' : 'bg-black border border-white/5 text-gray-400'}`}>K.A Mentor</button>
-                    <button onClick={() => { const s = sessions.find(s=>s.agent==='devAgent'); s ? switchSession(s.id) : createNewSession('devAgent'); setShowAdminPanel(false); }}
+                    <button onClick={() => { const s = sessions.find(x=>x.agent==='devAgent'); s ? switchSession(s.id) : createNewSession('devAgent'); setShowAdminPanel(false); }}
                       className={`flex-1 py-2.5 px-2 text-xs font-semibold rounded-md ${currentAgent === 'devAgent' ? 'bg-purple-900/40 text-purple-400 border border-purple-800' : 'bg-black border border-white/5 text-gray-400'}`}>Dev Agent</button>
                   </div>
                 </div>
@@ -604,7 +664,7 @@ function KASourceControlApp() {
                             status.includes('Verified') || status === 'Connected' ? 'bg-green-900/30 text-green-400'
                             : status.includes('Failed') ? 'bg-red-900/30 text-red-400'
                             : 'bg-amber-900/30 text-amber-400'}`}>{status}</span>
-                          {status === 'Requires Verification' && provider !== 'firebase' && provider !== 'cloudflare' && (
+                          {status === 'Requires Verification' && provider !== 'firebase' && (
                             <button onClick={() => handleVerifyProvider(provider)} disabled={isTesting === provider}
                               className="text-[10px] bg-cyan-900/50 text-cyan-400 px-2 py-0.5 rounded">
                               {isTesting === provider ? '...' : 'Test'}
@@ -627,7 +687,7 @@ function KASourceControlApp() {
 
       {showProfilePanel && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex flex-col justify-end sm:items-center sm:justify-center p-0 sm:p-4">
-          <div className="bg-[#111] sm:border border-t sm:border-white/10 p-6 rounded-t-3xl sm:rounded-2xl w-full max-w-sm">
+          <div className="bg-[#111] border-t sm:border border-white/10 p-6 rounded-t-3xl sm:rounded-2xl w-full max-w-sm">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-cyan-900/30 flex items-center justify-center border border-cyan-500/50">
@@ -645,9 +705,8 @@ function KASourceControlApp() {
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                   <BrainCircuit size={14}/> Personal Instructions
                 </label>
-                <p className="text-[10px] text-gray-500 mb-2">How should K.A Mentor respond? (e.g., "Talk like a friend")</p>
                 <textarea value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)}
-                  placeholder="Enter custom prompt..."
+                  placeholder="How should K.A Mentor respond?"
                   className="w-full h-24 bg-[#0a0a0a] border border-white/10 rounded-lg p-2 text-sm text-gray-300 focus:border-cyan-500/50 resize-none custom-scrollbar outline-none" />
                 <button onClick={async () => {
                   setIsSavingSettings(true);
@@ -678,15 +737,13 @@ function App() {
   return <ErrorBoundary><KASourceControlApp /></ErrorBoundary>;
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(e => console.log('SW failed:', e));
-  });
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
 }
 </script>
 </body>
-  </html>
+</html>
